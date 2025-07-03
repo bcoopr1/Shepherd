@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Inbox & File Management Dashboard</title>
+  <style>
+    /* Color Variables */
+    :root {
+      --bg-dark: #121212;
+      --bg-darker: #1e1e1e;
+      --bg-sidebar: #1f1f1f;
+      --text-light: #e0e0e0;
+      --text-muted: #aaa;
+      --border: #333;
+      --accent: #3a7bfd;
+      --card-hover: #2a2a2a;
+    }
+    /* Base styles */
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-light);
+      display: grid;
+      grid-template-areas:
+        "sidebar header"
+        "sidebar main";
+      grid-template-columns: 240px 1fr;
+      grid-template-rows: 60px 1fr;
+      height: 100vh;
+    }
+    a { text-decoration: none; color: inherit; }
+
+    /* Header */
+    header {
+      grid-area: header;
+      background-color: var(--bg-sidebar);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      gap: 20px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .logo { font-size: 1.4rem; font-weight: 600; }
+    .search {
+      flex: 1;
+      position: relative;
+    }
+    .search input {
+      width: 100%; padding: 8px 12px 8px 36px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background-color: var(--bg-darker);
+      color: var(--text-light);
+    }
+    .search::before {
+      content: '🔍';
+      position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+      color: var(--text-muted);
+      font-size: 1rem;
+    }
+    .icons { display: flex; gap: 16px; align-items: center; }
+    .icons img { width: 32px; height: 32px; border-radius: 50%; cursor: pointer; }
+
+    /* Sidebar */
+    aside {
+      grid-area: sidebar;
+      background-color: var(--bg-sidebar);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+    }
+    nav a {
+      display: flex;
+      align-items: center;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      border-radius: 4px;
+      transition: background 0.2s, color 0.2s;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+    nav a:hover, nav a.active {
+      background-color: var(--bg-darker);
+      color: var(--text-light);
+    }
+
+    /* Main content */
+    main {
+      grid-area: main;
+      padding: 20px;
+      overflow-y: auto;
+    }
+    section { margin-bottom: 20px; }
+    .card-container > *:last-child { margin-right: 0; }
+
+    /* Section Panels */
+    .panel {
+      background-color: var(--bg-darker);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+    }
+    .welcome .panel p { margin: 0; font-size: 1.2rem; }
+
+    /* Stats */
+    .stats { display: flex; gap: 20px; }
+    .stat {
+      flex: 1; text-align: center;
+      transition: background 0.2s;
+      cursor: default;
+    }
+    .stat:hover { background-color: var(--card-hover); border-radius: 6px; }
+    .stat h3 { margin: 0; font-size: 1.6rem; }
+    .stat p { margin-top: 6px; color: var(--text-muted); }
+
+    /* Chat Widget */
+    .chat-widget {
+      display: flex;
+      flex-direction: column;
+    }
+    .chat-header { font-weight: 600; margin-bottom: 12px; }
+    .chat-widget textarea {
+      width: 100%; height: 80px;
+      padding: 10px; border-radius: 6px;
+      background-color: var(--bg-dark);
+      border: 1px solid var(--border);
+      color: var(--text-light);
+      resize: none;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
+      font-size: 0.9rem;
+    }
+    .actions {
+      margin-top: 10px; display: flex; gap: 12px;
+    }
+    .actions button {
+      flex: 1; padding: 8px;
+      border: none; border-radius: 6px;
+      background-color: var(--accent);
+      color: #fff; font-weight: 500;
+      transition: background 0.2s;
+      cursor: pointer;
+    }
+    .actions button:hover { background-color: darken(var(--accent), 10%); }
+
+    /* Cards Grid */
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 20px;
+    }
+    .card {
+      background-color: var(--bg-dark);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 16px;
+      text-align: center;
+      transition: transform 0.2s;
+    }
+    .card:hover { transform: translateY(-4px); background-color: var(--card-hover); }
+    .card p { margin: 8px 0 0; color: var(--text-muted); }
+
+    /* Files Table */
+    .files table {
+      width: 100%; border-collapse: collapse;
+      font-size: 0.95rem;
+    }
+    .files th, .files td {
+      padding: 12px; border-bottom: 1px solid var(--border);
+      text-align: left;
+    }
+    .files th {
+      background-color: var(--bg-darker);
+      color: var(--text-muted);
+    }
+    .files tr:hover { background-color: var(--bg-dark); }
+    .btn {
+      margin-right: 6px; padding: 6px 10px;
+      border: none; border-radius: 4px;
+      background-color: var(--accent);
+      color: #fff; font-size: 0.85rem;
+      cursor: pointer; transition: background 0.2s;
+    }
+    .btn:hover { background-color: darken(var(--accent), 10%); }
+
+    /* Info Panel */
+    .info .panel p { margin: 8px 0; }
+    .info .actions { margin-top: 12px; }
+    .info .actions .btn { width: auto; }
+  </style>
+</head>
+<body>
+  <aside>
+    <nav>
+      <a href="#" class="active">Dashboard</a>
+      <a href="#">Inbox Overview</a>
+      <a href="#">Smart Folders</a>
+      <a href="#">Chat with AI Agent</a>
+      <a href="#">Files & Documents</a>
+      <a href="#">Settings</a>
+      <a href="#">Help & Support</a>
+    </nav>
+  </aside>
+  <header>
+    <div class="logo">AI Manager</div>
+    <div class="search"><input type="text" placeholder="Search emails, files..." /></div>
+    <div class="icons"><span title="Notifications">🔔</span><img src="https://via.placeholder.com/32" alt="avatar"/></div>
+  </header>
+  <main>
+    <section class="welcome panel">
+      <p>Welcome back, User. Your workspace is up to date.</p>
+    </section>
+    <section class="stats panel">
+      <div class="stat"><h3>⚡</h3><p>Agent Running</p></div>
+      <div class="stat"><h3>📨 5</h3><p>New Emails</p></div>
+      <div class="stat"><h3>📁 12</h3><p>Files Organized</p></div>
+    </section>
+    <section class="chat-widget panel">
+      <div class="chat-header">Chat with AI Agent</div>
+      <textarea placeholder="Ask me anything..."></textarea>
+      <div class="actions">
+        <button>Upload File</button>
+        <button>Scan Inbox</button>
+        <button>Create Folder</button>
+        <button>Analyze Document</button>
+      </div>
+    </section>
+    <section class="cards">
+      <div class="card"><strong>Action Needed</strong><p>3</p></div>
+      <div class="card"><strong>Contracts</strong><p>15</p></div>
+      <div class="card"><strong>Inspections</strong><p>7</p></div>
+      <div class="card"><strong>Receipts</strong><p>4</p></div>
+      <div class="card"><strong>Junk</strong><p>Auto-archived</p></div>
+    </section>
+    <section class="files panel">
+      <h3>Recent Files</h3>
+      <table>
+        <thead>
+          <tr><th>File Name</th><th>Category</th><th>Linked Email</th><th>Date</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Lease_123_Main.pdf</td>
+            
+            <td>Contract</td>
+            <td>Yes</td>
+            <td>July 1, 2025</td>
+            <td><button class="btn">Open</button><button class="btn">Tag</button></td>
+          </tr>
+          <tr>
+            <td>Repair_Report_Unit4.docx</td>
+            <td>Inspection</td>
+            <td>Yes</td>
+            <td>June 30, 2025</td>
+            <td><button class="btn">Open</button><button class="btn">Move</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+    <section class="info panel">
+      <p>Storage used: 24.6 GB / 100 GB</p>
+      <p>System Mode: ☁️ Cloud</p>
+      <p>Last Sync: 15 mins ago</p>
+      <p>Plan: Professional – $75/mo</p>
+      <div class="actions">
+        <button class="btn">Upgrade Plan</button>
+        <button class="btn">Manage Hardware</button>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
